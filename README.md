@@ -9,7 +9,7 @@ This template should help get you started developing with Vue 3 in Vite.
 ## Recommended Browser Setup
 
 - Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
   - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
 - Firefox:
   - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
@@ -36,3 +36,11 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## PWA (UCLAGo)
+
+- La aplicación está preparada como PWA usando `vite-plugin-pwa`.
+- En desarrollo: ejecutar `npm run dev` y usar las herramientas de Chrome para "Aplicaciones" → "Service Workers" para comprobar el registro.
+- Para generar la versión final con service worker activo, ejecutar `npm run build` y `npm run preview` para probar la versión de producción.
+
+El manifiesto se genera desde la configuración del plugin (`vite.config.js`); los iconos están en `public/icons/`.
