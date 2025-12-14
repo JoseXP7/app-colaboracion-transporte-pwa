@@ -50,12 +50,12 @@ import { Label } from '@/components/ui/label'
         <!-- Register -->
         <p class="text-center text-sm text-slate-600">
           ¿No tienes cuenta?
-          <a
-            href="/register"
+          <RouterLink
+            to="/register"
             class="font-semibold text-primary hover:underline"
           >
             Regístrate
-          </a>
+          </RouterLink>
         </p>
       </div>
 
