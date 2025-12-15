@@ -15,3 +15,8 @@ export const registerSchema = z
     message: 'Las contraseñas no coinciden',
     path: ['passwordConfirm'],
   })
+
+export const loginSchema = z.object({
+  email: z.email('Correo electrónico inválido'),
+  password: z.string().min(1, 'La contraseña es requerida'),
+})

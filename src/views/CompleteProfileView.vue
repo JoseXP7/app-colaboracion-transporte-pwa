@@ -1,8 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Button } from '@/components/ui/button'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { Loader2 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+} from '@/components/ui/field'
+
 import {
   Select,
   SelectContent,
@@ -12,13 +22,86 @@ import {
 } from '@/components/ui/select'
 
 import { User } from 'lucide-vue-next'
+
+import { useUserStore } from '@/stores/userStore'
 import { useSupabase } from '@/client/supabase'
+import { useAuth } from '@/composables/useAuth'
+
+import { completeProfileSchema } from '@/schemas/completeProfile.schema'
 
 // state
 const faculties = ref([])
-const selectedFaculty = ref(null)
 
 const { supabase } = useSupabase()
+const { getSession } = useAuth()
+
+const loading = ref(false)
+const router = useRouter()
+
+const form = ref({
+  first_name: '',
+  last_name: '',
+  phone_number: '',
+  cedula: 'V-',
+  faculty_id: '',
+})
+
+const userStore = useUserStore()
+
+const cedulaModel = computed({
+  get() {
+    return form.value.cedula || 'V-'
+  },
+  set(val) {
+    let digits = val.replace(/^V-?/i, '').replace(/[^\d]/g, '')
+    form.value.cedula = 'V-' + digits
+  },
+})
+
+const errors = ref({})
+
+const submit = async () => {
+  errors.value = {}
+  loading.value = true
+
+  const result = completeProfileSchema.safeParse(form.value)
+  if (!result.success) {
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0]
+      errors.value[field] = issue.message
+    })
+    loading.value = false
+    return
+  }
+
+  try {
+    const session = await getSession()
+
+    const userId = session.user.id
+
+    const { error } = await supabase.from('profiles').upsert({
+      id: userId,
+      ...form.value,
+    })
+
+    if (error) throw error
+    await userStore.getProfile()
+    router.push('/resume')
+  } catch (error) {
+    console.log(error)
+    toast.error(error.message, {
+      position: 'bottom-right',
+      duration: 5000,
+      style: {
+        backgroundColor: 'var(--destructive)',
+        color: '#fff',
+        border: 'none',
+      },
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(async () => {
   const { data, error } = await supabase
@@ -27,7 +110,15 @@ onMounted(async () => {
     .order('name')
 
   if (error) {
-    console.error('Error cargando facultades:', error)
+    toast.error('Error cargando facultades', {
+      position: 'bottom-right',
+      duration: 5000,
+      style: {
+        backgroundColor: 'var(--destructive)',
+        color: '#fff',
+        border: 'none',
+      },
+    })
     return
   }
 
@@ -58,71 +149,98 @@ onMounted(async () => {
 
       <!-- Card -->
       <div class="rounded-2xl bg-white shadow-lg p-6 space-y-5">
-        <!-- Nombre -->
-        <div class="space-y-2">
-          <Label for="name" class="text-sm font-medium text-slate-700"
-            >Nombre completo</Label
-          >
-          <Input type="text" id="name" placeholder="Juan Pérez" />
-        </div>
+        <form @submit.prevent="submit" autocomplete="off" class="space-y-5">
+          <FieldGroup>
+            <!-- Nombre -->
+            <Field>
+              <FieldLabel for="first_name">Nombre</FieldLabel>
+              <Input
+                id="first_name"
+                type="text"
+                placeholder="Juan"
+                v-model="form.first_name"
+                :aria-invalid="!!errors.first_name"
+              />
+              <FieldError v-if="errors.first_name">
+                {{ errors.first_name }}
+              </FieldError>
+            </Field>
 
-        <!-- Cédula -->
-        <div class="space-y-2">
-          <Label for="idNumber" class="text-sm font-medium text-slate-700"
-            >Cédula</Label
-          >
-          <Input type="text" id="idNumber" placeholder="V-12345678" />
-        </div>
+            <!-- Apellido -->
+            <Field>
+              <FieldLabel for="last_name">Apellido</FieldLabel>
+              <Input
+                id="last_name"
+                type="text"
+                placeholder="Pérez"
+                v-model="form.last_name"
+                :aria-invalid="!!errors.last_name"
+              />
+              <FieldError v-if="errors.last_name">
+                {{ errors.last_name }}
+              </FieldError>
+            </Field>
 
-        <!-- Teléfono -->
-        <div class="space-y-2">
-          <Label for="phone" class="text-sm font-medium text-slate-700"
-            >Teléfono</Label
-          >
+            <!-- Cédula -->
+            <Field>
+              <FieldLabel for="cedula">Cédula</FieldLabel>
+              <Input
+                id="cedula"
+                type="text"
+                placeholder="V-12345678"
+                v-model="cedulaModel"
+                :aria-invalid="!!errors.cedula"
+              />
+              <FieldError v-if="errors.cedula">
+                {{ errors.cedula }}
+              </FieldError>
+            </Field>
 
-          <div class="flex items-center gap-2">
-            <Select id="code_phone">
-              <SelectTrigger>
-                <SelectValue placeholder="0000" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0414"> 0414 </SelectItem>
-                <SelectItem value="0424"> 0424 </SelectItem>
-                <SelectItem value="0416"> 0416 </SelectItem>
-                <SelectItem value="0426"> 0426 </SelectItem>
-                <SelectItem value="0412"> 0412 </SelectItem>
-                <SelectItem value="0422"> 0422 </SelectItem>
-              </SelectContent>
-            </Select>
-            <Input type="text" id="phone" placeholder="1234567" />
-          </div>
-        </div>
+            <!-- Teléfono -->
+            <Field>
+              <FieldLabel for="phone_number">Teléfono</FieldLabel>
+              <Input
+                id="phone_number"
+                type="tel"
+                placeholder="04141234567"
+                v-model="form.phone_number"
+                :aria-invalid="!!errors.phone_number"
+              />
+              <FieldError v-if="errors.phone_number">
+                {{ errors.phone_number }}
+              </FieldError>
+            </Field>
 
-        <!-- Facultad -->
-        <div class="space-y-2">
-          <Label for="faculty" class="text-sm font-medium text-slate-700">
-            Decanato
-          </Label>
+            <!-- Facultad -->
+            <Field>
+              <FieldLabel for="faculty_id">Decanato</FieldLabel>
+              <Select v-model="form.faculty_id">
+                <SelectTrigger class="w-full">
+                  <SelectValue placeholder="Selecciona tu Decanato" />
+                </SelectTrigger>
 
-          <Select v-model="selectedFaculty">
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="Selecciona tu Decanato" />
-            </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="faculty in faculties"
+                    :key="faculty.id"
+                    :value="faculty.id"
+                  >
+                    {{ faculty.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FieldError v-if="errors.faculty_id">
+                {{ errors.faculty_id }}
+              </FieldError>
+            </Field>
+          </FieldGroup>
 
-            <SelectContent>
-              <SelectItem
-                v-for="faculty in faculties"
-                :key="faculty.id"
-                :value="faculty.id"
-              >
-                {{ faculty.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <!-- Button -->
-        <Button class="w-full" size="lg">Guardar y continuar</Button>
+          <!-- Button -->
+          <Button class="w-full" size="lg" :disabled="loading">
+            <Loader2 v-if="loading" class="w-4 h-4 mr-2 animate-spin" />
+            {{ loading ? 'Guardando...' : 'Guardar y continuar' }}
+          </Button>
+        </form>
       </div>
 
       <!-- Footer -->

@@ -7,16 +7,22 @@ export function useAuth() {
 
   const getSession = async () => {
     const { data, error } = await supabase.auth.getSession()
-
     if (error) throw error
 
-    if (data.session?.user) {
-      userStore.setUser(data.session.user)
-      if (!userStore.profile) {
-        await userStore.getProfile()
-      }
+    const session = data.session
+
+    if (!session?.user) {
+      userStore.clear()
+      return null
     }
-    return data.session
+
+    // Fuente de verdad: auth.users
+    userStore.setUser(session.user)
+
+    // Cargar profile SIEMPRE que haya sesión
+    await userStore.getProfile()
+
+    return session
   }
 
   const signUpWithPassw = async ({ email, password }) => {

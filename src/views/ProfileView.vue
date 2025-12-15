@@ -1,11 +1,44 @@
 <script setup>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
-
 import { ChevronLeft } from 'lucide-vue-next'
+
+import { useUserStore } from '@/stores/userStore'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const userStore = useUserStore()
+const { signOut } = useAuth()
+
+const profile = computed(() => userStore.profile)
+const user = computed(() => userStore.user)
+
+const facultyAcronyms = {
+  1: 'DCS',
+  2: 'DCEE',
+  3: 'DAG',
+  4: 'DCV',
+  5: 'DCYT',
+  6: 'DEHA',
+  7: 'DIC',
+}
+
+const initials = computed(() => {
+  if (!profile.value) return '?'
+  return (
+    profile.value.first_name.charAt(0) + profile.value.last_name.charAt(0)
+  ).toUpperCase()
+})
+
+const logout = async () => {
+  await signOut()
+  router.push('/login')
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-100 px-4 py-6">
+  <div v-if="profile && user" class="min-h-screen bg-slate-100 px-4 py-6">
     <!-- Header -->
     <div class="flex items-center gap-4 mb-6">
       <RouterLink
@@ -26,47 +59,42 @@ import { ChevronLeft } from 'lucide-vue-next'
         <div
           class="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-semibold"
         >
-          J
+          {{ initials }}
         </div>
 
         <div>
-          <p class="text-base font-semibold text-slate-900">Juan Pérez</p>
-          <p class="text-sm text-slate-500">Estudiante · DCYT</p>
+          <p class="text-base font-semibold text-slate-900">
+            {{ profile.first_name }} {{ profile.last_name }}
+          </p>
+          <p class="text-sm text-slate-500">
+            Estudiante ·
+            {{ facultyAcronyms[profile.faculty_id] || profile.faculty_id }}
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Info Section -->
     <div class="bg-white rounded-3xl shadow-sm divide-y">
-      <!-- Item -->
-      <div class="flex items-center justify-between px-6 py-4">
-        <div>
-          <p class="text-sm text-slate-500">Correo</p>
-          <p class="text-sm font-medium text-slate-900">correo@gmail.com</p>
-        </div>
+      <div class="px-6 py-4">
+        <p class="text-sm text-slate-500">Correo</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ user.email }}
+        </p>
       </div>
 
-      <div class="flex items-center justify-between px-6 py-4">
-        <div>
-          <p class="text-sm text-slate-500">Cédula</p>
-          <p class="text-sm font-medium text-slate-900">V-12345678</p>
-        </div>
+      <div class="px-6 py-4">
+        <p class="text-sm text-slate-500">Cédula</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ profile.cedula }}
+        </p>
       </div>
 
-      <div class="flex items-center justify-between px-6 py-4">
-        <div>
-          <p class="text-sm text-slate-500">Teléfono</p>
-          <p class="text-sm font-medium text-slate-900">0412-1234567</p>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between px-6 py-4">
-        <div>
-          <p class="text-sm text-slate-500">Facultad</p>
-          <p class="text-sm font-medium text-slate-900">
-            Decanato de Ciencias y Tecnología
-          </p>
-        </div>
+      <div class="px-6 py-4">
+        <p class="text-sm text-slate-500">Teléfono</p>
+        <p class="text-sm font-medium text-slate-900">
+          {{ profile.phone_number }}
+        </p>
       </div>
     </div>
 
@@ -76,7 +104,7 @@ import { ChevronLeft } from 'lucide-vue-next'
         Editar perfil
       </Button>
 
-      <Button class="w-full" size="lg" variant="destructive">
+      <Button class="w-full" size="lg" variant="destructive" @click="logout">
         Cerrar sesión
       </Button>
     </div>

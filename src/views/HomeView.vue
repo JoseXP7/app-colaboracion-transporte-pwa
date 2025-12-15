@@ -1,6 +1,8 @@
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
-
+import { Spinner } from '@/components/ui/spinner'
+import { toast } from 'vue-sonner'
 import {
   BanknoteArrowUp,
   ScanQrCode,
@@ -10,6 +12,48 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-vue-next'
+import { useUserStore } from '@/stores/userStore'
+import { useSupabase } from '@/client/supabase'
+
+const userStore = useUserStore()
+const profile = computed(() => userStore.profile)
+const user = computed(() => userStore.user)
+
+const wallet = ref(0)
+const walletLoading = ref(true)
+
+const initials = computed(() => {
+  if (!profile.value) return '?'
+  return (
+    profile.value.first_name.charAt(0) + profile.value.last_name.charAt(0)
+  ).toUpperCase()
+})
+
+const { supabase } = useSupabase()
+
+onMounted(async () => {
+  if (!user.value?.id) return
+  walletLoading.value = true
+  const { data, error } = await supabase
+    .from('wallets')
+    .select('balance_bs')
+    .eq('user_id', user.value.id)
+    .maybeSingle()
+
+  wallet.value = data?.balance_bs ?? 0
+  walletLoading.value = false
+  if (error) {
+    toast.error(error.message, {
+      position: 'bottom-right',
+      duration: 5000,
+      style: {
+        backgroundColor: 'var(--destructive)',
+        color: '#fff',
+        border: 'none',
+      },
+    })
+  }
+})
 </script>
 
 <template>
@@ -20,10 +64,12 @@ import {
         <div
           class="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold"
         >
-          J
+          {{ initials }}
         </div>
         <div>
-          <p class="text-sm font-medium text-slate-900">Juan Pérez</p>
+          <p class="text-sm font-medium text-slate-900">
+            {{ profile.first_name }} {{ profile.last_name }}
+          </p>
           <p class="text-xs text-slate-500">Estudiante</p>
         </div>
       </div>
@@ -40,8 +86,16 @@ import {
     <!-- Balance Card -->
     <div class="rounded-3xl bg-primary text-white p-6 shadow-xl mb-6">
       <p class="text-sm opacity-80">Saldo disponible</p>
-      <h2 class="text-3xl font-bold mt-2">Bs 99999,00</h2>
-      <p class="text-xs opacity-80 mt-1">Aqui lo que sobra es rial</p>
+      <h2 class="text-3xl font-bold mt-2 flex items-center gap-2">
+        Bs
+        {{
+          Number(wallet).toLocaleString('es-VE', {
+            minimumFractionDigits: 2,
+          })
+        }}
+        <Spinner class="size-6" v-if="walletLoading" />
+      </h2>
+      <p class="text-xs opacity-80 mt-1">Tu saldo actual en la billetera</p>
     </div>
 
     <!-- Actions -->
