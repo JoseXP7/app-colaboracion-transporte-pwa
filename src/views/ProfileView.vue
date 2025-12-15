@@ -9,7 +9,7 @@ import { ChevronLeft } from 'lucide-vue-next'
     <!-- Header -->
     <div class="flex items-center gap-4 mb-6">
       <RouterLink
-        to="/"
+        to="/resume"
         class="h-10 w-10 rounded-full bg-white shadow flex items-center justify-center text-slate-600"
       >
         <ChevronLeft size="20" />

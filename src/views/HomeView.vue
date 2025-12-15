@@ -97,7 +97,9 @@ import {
         <h3 class="text-base font-semibold text-slate-900">
           Transacciones recientes
         </h3>
-        <button class="text-sm text-primary font-medium">Ver todas</button>
+        <RouterLink to="/" class="text-sm text-primary font-medium"
+          >Ver todas</RouterLink
+        >
       </div>
 
       <div class="space-y-3">

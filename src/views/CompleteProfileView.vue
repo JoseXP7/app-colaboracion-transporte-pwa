@@ -1,4 +1,5 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,10 +9,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectLabel,
 } from '@/components/ui/select'
 
 import { User } from 'lucide-vue-next'
+import { useSupabase } from '@/client/supabase'
+
+// state
+const faculties = ref([])
+const selectedFaculty = ref(null)
+
+const { supabase } = useSupabase()
+
+onMounted(async () => {
+  const { data, error } = await supabase
+    .from('faculties')
+    .select('id, name, acronym')
+    .order('name')
+
+  if (error) {
+    console.error('Error cargando facultades:', error)
+    return
+  }
+
+  faculties.value = data
+})
 </script>
 
 <template>
@@ -82,29 +103,19 @@ import { User } from 'lucide-vue-next'
           <Label for="faculty" class="text-sm font-medium text-slate-700">
             Decanato
           </Label>
-          <Select id="faculty">
+
+          <Select v-model="selectedFaculty">
             <SelectTrigger class="w-full">
               <SelectValue placeholder="Selecciona tu Decanato" />
             </SelectTrigger>
+
             <SelectContent>
-              <SelectItem value="DCV">
-                Decanato de Ciencias Veterinarias
-              </SelectItem>
-              <SelectItem value="DAG"> Decanato de Agronomía </SelectItem>
-              <SelectItem value="DCYT">
-                Decanato de Ciencias y Tecnología
-              </SelectItem>
-              <SelectItem value="DIC">
-                Decanato de Ingeniería Civil
-              </SelectItem>
-              <SelectItem value="DCS">
-                Decanato de Ciencias de la Salud
-              </SelectItem>
-              <SelectItem value="DEHA">
-                Decanato Experimental de Humanidades y Artes
-              </SelectItem>
-              <SelectItem value="DCEE">
-                Decanato de Ciencias Económicas y Empresariales
+              <SelectItem
+                v-for="faculty in faculties"
+                :key="faculty.id"
+                :value="faculty.id"
+              >
+                {{ faculty.name }}
               </SelectItem>
             </SelectContent>
           </Select>
