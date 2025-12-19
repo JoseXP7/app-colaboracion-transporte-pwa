@@ -47,8 +47,8 @@ watch(scanned, (val) => {
 
 <template>
   <div class="min-h-screen bg-slate-100 px-4 py-6">
-    <!-- Header | Recordatorio: Ocultar el link al escanear exitosamente -->
-    <div class="flex items-center gap-4 mb-6">
+    <!-- Header -->
+    <div v-if="!scanned" class="flex items-center gap-4 mb-6">
       <RouterLink
         to="/resume"
         class="h-10 w-10 rounded-full bg-white shadow flex items-center justify-center text-slate-600"
