@@ -74,14 +74,14 @@ import { ScanQrCode, HandHeart } from 'lucide-vue-next'
       <!-- CTA -->
       <div class="w-full max-w-sm space-y-4">
         <RouterLink
-          to="/login"
+          to="/register"
           class="w-full h-14 rounded-2xl bg-primary text-white font-semibold text-base grid items-center justify-center shadow-lg hover:opacity-90 transition active:scale-[0.97]"
         >
           Comenzar
         </RouterLink>
 
         <RouterLink
-          to="/register"
+          to="/login"
           class="w-full h-14 rounded-2xl bg-slate-100 text-slate-800 grid items-center justify-center font-medium hover:bg-slate-200 transition"
         >
           Ya tengo cuenta

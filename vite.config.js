@@ -52,4 +52,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Quitar esto en produccion
+    https: {
+      key: './localhost+2-key.pem',
+      cert: './localhost+2.pem',
+    },
+  },
 })

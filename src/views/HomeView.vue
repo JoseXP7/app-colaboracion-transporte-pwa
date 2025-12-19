@@ -114,7 +114,7 @@ onMounted(async () => {
       <!-- Scan QR -->
       <div class="flex flex-col items-center gap-2">
         <RouterLink
-          to="/"
+          to="/scan-qr"
           class="h-14 w-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center text-xl"
         >
           <ScanQrCode />
