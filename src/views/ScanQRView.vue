@@ -2,19 +2,43 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { QrcodeStream } from 'vue-qrcode-reader'
-import { CheckCircle, ChevronLeft } from 'lucide-vue-next'
+import { CheckCircle, ChevronLeft, CircleX } from 'lucide-vue-next'
+import { useSupabase } from '@/client/supabase'
+import { Button } from '@/components/ui/button'
 
 const router = useRouter()
+const { supabase } = useSupabase()
 
 const scanned = ref(false)
+const success = ref(false)
 const result = ref('')
 const errorMsg = ref('')
 const redirectIn = ref(7)
 let interval = null
 
-function onDetect([data]) {
+async function onDetect([data]) {
+  if (scanned.value) return
+
   scanned.value = true
   result.value = data.rawValue || data
+
+  try {
+    const { data, error } = await supabase.functions.invoke('pay_via_qr', {
+      body: { qr_token: result.value },
+    })
+
+    if (!data.success) {
+      errorMsg.value = data.message
+      return
+    }
+
+    success.value = true
+
+    // opcional: guardar balance nuevo en store luego
+  } catch (err) {
+    errorMsg.value = err.message || 'Error procesando el pago'
+    scanned.value = false
+  }
 }
 
 function onError(error) {
@@ -29,8 +53,14 @@ function onError(error) {
   }
 }
 
+function resetError() {
+  errorMsg.value = ''
+  scanned.value = false
+  success.value = false
+}
+
 // redirección automática
-watch(scanned, (val) => {
+watch(success, (val) => {
   if (val) {
     redirectIn.value = 7
 
@@ -64,27 +94,32 @@ watch(scanned, (val) => {
         Apunta la cámara al código QR
       </p>
 
-      <!-- ERROR -->
-      <div
-        v-if="errorMsg"
-        class="w-full rounded-xl bg-red-50 border border-red-200 p-4 text-center text-sm text-red-700"
-      >
-        {{ errorMsg }}
-      </div>
-
       <!-- SCANNER -->
       <div class="relative">
         <QrcodeStream
-          v-if="!errorMsg"
           :paused="scanned"
           @detect="onDetect"
           @error="onError"
           class="w-72 h-72 rounded-2xl overflow-hidden border-2 border-primary/40"
         />
+        <!-- ERROR OVERLAY -->
+        <div
+          v-if="errorMsg && !success"
+          class="absolute inset-0 bg-red-600/90 rounded-2xl flex flex-col items-center justify-center text-white animate-in fade-in zoom-in"
+        >
+          <CircleX class="w-16 h-16 mb-2" />
+          <p class="font-semibold text-lg text-center px-4">
+            {{ errorMsg }}
+          </p>
+
+          <Button class="mt-4 text-black" variant="outline" @click="resetError">
+            Intentar de nuevo
+          </Button>
+        </div>
 
         <!-- SUCCESS OVERLAY -->
         <div
-          v-if="scanned"
+          v-if="success"
           class="absolute inset-0 bg-green-600/90 rounded-2xl flex flex-col items-center justify-center text-white animate-in fade-in zoom-in"
         >
           <CheckCircle class="w-16 h-16 mb-2" />
