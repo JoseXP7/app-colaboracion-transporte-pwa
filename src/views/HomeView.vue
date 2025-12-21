@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useTransactions } from '@/composables/useTransactions'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import TransactionItem from '@/components/TransactionItem.vue'
 import { toast } from 'vue-sonner'
 import {
   BanknoteArrowUp,
@@ -9,8 +11,6 @@ import {
   ReceiptText,
   User,
   Bell,
-  ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/userStore'
 import { useSupabase } from '@/client/supabase'
@@ -21,6 +21,7 @@ const user = computed(() => userStore.user)
 
 const wallet = ref(0)
 const walletLoading = ref(true)
+const transactions = ref([])
 
 const initials = computed(() => {
   if (!profile.value) return '?'
@@ -30,6 +31,7 @@ const initials = computed(() => {
 })
 
 const { supabase } = useSupabase()
+const { fetchTransactions } = useTransactions()
 
 onMounted(async () => {
   if (!user.value?.id) return
@@ -42,6 +44,8 @@ onMounted(async () => {
 
   wallet.value = data?.balance_bs ?? 0
   walletLoading.value = false
+
+  transactions.value = await fetchTransactions(4)
   if (error) {
     toast.error(error.message, {
       position: 'bottom-right',
@@ -103,7 +107,7 @@ onMounted(async () => {
       <!-- Recarga -->
       <div class="flex flex-col items-center gap-2">
         <RouterLink
-          to="/"
+          to="/topup-request"
           class="h-14 w-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center text-xl"
         >
           <BanknoteArrowUp />
@@ -125,7 +129,7 @@ onMounted(async () => {
       <!-- Movements -->
       <div class="flex flex-col items-center gap-2">
         <RouterLink
-          to="/"
+          to="/transactions"
           class="h-14 w-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center text-xl"
         >
           <ReceiptText />
@@ -151,45 +155,30 @@ onMounted(async () => {
         <h3 class="text-base font-semibold text-slate-900">
           Transacciones recientes
         </h3>
-        <RouterLink to="/" class="text-sm text-primary font-medium"
+        <RouterLink to="/transactions" class="text-sm text-primary font-medium"
           >Ver todas</RouterLink
         >
       </div>
 
       <div class="space-y-3">
-        <!-- Item -->
         <div
-          class="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm"
+          v-if="transactions.length === 0"
+          class="bg-white rounded-3xl shadow p-6 text-center text-slate-500"
         >
-          <div class="flex items-center gap-3">
-            <div class="bg-red-100 p-2 rounded-md text-red-500">
-              <ArrowDownRight />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-slate-900">
-                Colaboracion transporte
-              </p>
-              <p class="text-xs text-slate-500">Hoy · 08:30 AM</p>
-            </div>
-          </div>
-          <span class="text-sm font-semibold text-red-500"> - Bs 25,00 </span>
+          No hay transacciones registradas
         </div>
 
-        <div
-          class="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm"
-        >
-          <div class="flex items-center gap-3">
-            <div class="bg-green-100 p-2 rounded-md text-green-600">
-              <ArrowUpRight />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-slate-900">Recarga aprobada</p>
-              <p class="text-xs text-slate-500">Ayer · 02:15 PM</p>
-            </div>
-          </div>
-          <span class="text-sm font-semibold text-green-600">
-            + Bs 100,00
-          </span>
+        <!-- List -->
+        <div v-if="loading" class="text-center text-slate-500">
+          Cargando transacciones…
+        </div>
+
+        <div v-else class="space-y-3">
+          <TransactionItem
+            v-for="tx in transactions"
+            :key="tx.id"
+            :transaction="tx"
+          />
         </div>
       </div>
     </div>

@@ -113,12 +113,30 @@ const router = createRouter({
       beforeEnter: isAuth,
     },
     {
+      path: '/topup-request',
+      name: 'topup-request',
+      // route level code-splitting
+      // this generates a separate chunk (About.[hash].js) for this route
+      // which is lazy-loaded when the route is visited.
+      component: () => import('../views/TopUpView.vue'),
+      beforeEnter: isAuth,
+    },
+    {
       path: '/scan-qr',
       name: 'scan-qr',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/ScanQRView.vue'),
+      beforeEnter: isAuth,
+    },
+    {
+      path: '/transactions',
+      name: 'transactions',
+      // route level code-splitting
+      // this generates a separate chunk (About.[hash].js) for this route
+      // which is lazy-loaded when the route is visited.
+      component: () => import('../views/TransactionsView.vue'),
       beforeEnter: isAuth,
     },
     {
