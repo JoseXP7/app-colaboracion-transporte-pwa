@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LandingView from '../views/LandingView.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useUserStore } from '@/stores/userStore'
+import { ceGuard } from './guards/ce.guard'
 
 const isAuth = async (to, from, next) => {
   const { getSession } = useAuth()
@@ -149,13 +150,26 @@ const router = createRouter({
       beforeEnter: isAuth,
     },
     {
-      path: '/generateqr',
-      name: 'generateqr',
+      path: '/ce',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () => import('../views/admin/GenerateQRView.vue'),
-      beforeEnter: isAuth,
+      component: () => import('../layouts/admin_dashboard_base.vue'),
+      beforeEnter: ceGuard,
+      children: [
+        {
+          path: '',
+          component: () => import('../views/admin/ResumeView.vue'),
+        },
+        {
+          path: 'topups-requests',
+          component: () => import('../views/admin/TopupsRequestsView.vue'),
+        },
+        {
+          path: 'generateqr',
+          component: () => import('../views/admin/GenerateQRView.vue'),
+        },
+      ],
     },
   ],
 })

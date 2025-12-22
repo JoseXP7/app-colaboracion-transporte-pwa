@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
+import QRCode from 'qrcode'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
 import {
   Field,
   FieldGroup,
@@ -12,7 +12,7 @@ import {
   FieldError,
 } from '@/components/ui/field'
 
-import { Loader2, QrCode, ChevronLeft } from 'lucide-vue-next'
+import { Loader2, QrCode, Copy } from 'lucide-vue-next'
 import { useSupabase } from '@/client/supabase'
 import { generateQrSchema } from '@/schemas/qr.schema'
 
@@ -20,12 +20,14 @@ const { supabase } = useSupabase()
 
 const amount = ref(0)
 const token = ref(null)
+const qrDataUrl = ref(null)
 const loading = ref(false)
 const errors = ref({})
 
 const generateQr = async () => {
   errors.value = {}
   token.value = null
+  qrDataUrl.value = null
   loading.value = true
 
   const result = generateQrSchema.safeParse({
@@ -34,8 +36,7 @@ const generateQr = async () => {
 
   if (!result.success) {
     result.error.issues.forEach((issue) => {
-      const field = issue.path[0]
-      errors.value[field] = issue.message
+      errors.value[issue.path[0]] = issue.message
     })
     loading.value = false
     return
@@ -51,6 +52,12 @@ const generateQr = async () => {
     if (error) throw error
 
     token.value = data.token
+
+    // generar QR visual
+    qrDataUrl.value = await QRCode.toDataURL(data.token, {
+      width: 240,
+      margin: 2,
+    })
 
     toast.success('QR generado correctamente', {
       position: 'bottom-right',
@@ -69,44 +76,39 @@ const generateQr = async () => {
     loading.value = false
   }
 }
+
+const copyToken = () => {
+  if (!token.value) return
+  navigator.clipboard.writeText(token.value)
+  toast.success('Token copiado')
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-100 px-4 py-6">
+  <div class="space-y-6 max-w-xl">
     <!-- Header -->
-    <div class="mb-6 flex items-center gap-3">
-      <RouterLink
-        to="/resume"
-        class="h-10 w-10 rounded-full bg-white shadow flex items-center justify-center text-slate-600"
-      >
-        <ChevronLeft size="20" />
-      </RouterLink>
+    <div class="flex items-center gap-3">
       <div
         class="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"
       >
         <QrCode />
       </div>
-
       <div>
-        <h1 class="text-lg font-semibold text-slate-900">
+        <h1 class="text-xl font-semibold text-slate-900">
           Generar QR de cobro
         </h1>
-        <p class="text-sm text-slate-500">Crea un QR para recibir pagos</p>
+        <p class="text-sm text-slate-500">
+          Crea un QR para recibir pagos rápidos
+        </p>
       </div>
     </div>
 
     <!-- Card -->
-    <div class="bg-white rounded-3xl shadow-lg p-6 space-y-6 max-w-md">
+    <div class="bg-white rounded-3xl shadow-sm p-6 space-y-6">
       <FieldGroup>
         <Field>
-          <FieldLabel for="amount">Monto (Bs)</FieldLabel>
-          <Input
-            id="amount"
-            type="number"
-            placeholder="Ej: 25"
-            v-model.number="amount"
-            :aria-invalid="!!errors.amount_bs"
-          />
+          <FieldLabel>Monto (Bs)</FieldLabel>
+          <Input type="number" placeholder="Ej: 25" v-model.number="amount" />
           <FieldError v-if="errors.amount_bs">
             {{ errors.amount_bs }}
           </FieldError>
@@ -115,18 +117,31 @@ const generateQr = async () => {
 
       <Button class="w-full" size="lg" :disabled="loading" @click="generateQr">
         <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-        {{ loading ? 'Generando...' : 'Generar QR' }}
+        {{ loading ? 'Generando…' : 'Generar QR' }}
       </Button>
 
-      <!-- Token -->
+      <!-- RESULT -->
       <div
         v-if="token"
-        class="rounded-2xl bg-slate-50 border border-slate-200 p-4"
+        class="border border-slate-200 rounded-2xl p-4 space-y-4"
       >
-        <p class="text-xs text-slate-500 mb-1">Token generado</p>
-        <p class="text-sm font-mono break-all text-slate-900">
+        <div class="flex justify-center">
+          <img
+            v-if="qrDataUrl"
+            :src="qrDataUrl"
+            alt="QR generado"
+            class="rounded-xl border"
+          />
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-3 text-sm font-mono break-all">
           {{ token }}
-        </p>
+        </div>
+
+        <Button variant="outline" size="sm" class="w-full" @click="copyToken">
+          <Copy class="w-4 h-4 mr-2" />
+          Copiar token
+        </Button>
       </div>
     </div>
   </div>
