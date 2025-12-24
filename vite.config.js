@@ -25,23 +25,31 @@ export default defineConfig({
         theme_color: '#0f172a',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/resume',
         icons: [
           {
-            src: '/icons/icon-192.svg',
+            src: '/icons/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/favicon-96x96.png',
+            sizes: '96x96',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/web-app-manifest-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: '/icons/icon-512.svg',
+            src: '/icons/web-app-manifest-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-          },
-          {
-            src: '/icons/maskable-icon.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'maskable',
+            type: 'image/png',
+            purpose: 'any maskable',
           },
         ],
       },
@@ -52,11 +60,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  server: {
-    // Quitar esto en produccion
-    https: {
-      key: './localhost+2-key.pem',
-      cert: './localhost+2.pem',
-    },
-  },
+  // server: {
+  //   // Quitar esto en produccion
+  //   https: {
+  //     key: './localhost+2-key.pem',
+  //     cert: './localhost+2.pem',
+  //   },
+  // },
 })

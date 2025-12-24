@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft } from 'lucide-vue-next'
+import { ChevronLeft, ShieldUser } from 'lucide-vue-next'
 
 import { useUserStore } from '@/stores/userStore'
 import { useAuth } from '@/composables/useAuth'
@@ -71,6 +71,16 @@ const logout = async () => {
             {{ facultyAcronyms[profile.faculty_id] || profile.faculty_id }}
           </p>
         </div>
+
+        <Button
+          class="ml-auto"
+          v-if="userStore.profile.role == 'ce_admin'"
+          size="sm"
+          @click="router.push('/ce/')"
+        >
+          <ShieldUser class="w-4 h-4" />
+          <span class="hidden sm:block">Ir al Dashboard CE</span>
+        </Button>
       </div>
     </div>
 

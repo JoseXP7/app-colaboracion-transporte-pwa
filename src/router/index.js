@@ -151,23 +151,43 @@ const router = createRouter({
     },
     {
       path: '/ce',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../layouts/admin_dashboard_base.vue'),
       beforeEnter: ceGuard,
       children: [
         {
           path: '',
+          name: 'ce-dashboard',
           component: () => import('../views/admin/ResumeView.vue'),
         },
         {
           path: 'topups-requests',
+          name: 'ce-topups',
           component: () => import('../views/admin/TopupsRequestsView.vue'),
         },
         {
-          path: 'generateqr',
-          component: () => import('../views/admin/GenerateQRView.vue'),
+          path: 'statistics',
+          name: 'ce-statistics',
+          component: () => import('../views/admin/StatisticView.vue'),
+        },
+        {
+          path: 'payment-info',
+          name: 'ce-payment-info',
+          component: () => import('../views/admin/PaymentInfoView.vue'),
+        },
+        {
+          path: 'qr',
+          children: [
+            {
+              path: 'generate',
+              name: 'ce-qr-generate',
+              component: () => import('../views/admin/GenerateQRView.vue'),
+            },
+            {
+              path: 'list',
+              name: 'ce-qr-list',
+              component: () => import('../views/admin/ListQRView.vue'),
+            },
+          ],
         },
       ],
     },

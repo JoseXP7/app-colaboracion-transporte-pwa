@@ -37,3 +37,6 @@ localhost+2.pem
 
 # Vitest
 __screenshots__/
+
+# Local Netlify folder
+.netlify
