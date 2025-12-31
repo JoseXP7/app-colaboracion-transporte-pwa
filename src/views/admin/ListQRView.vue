@@ -65,8 +65,8 @@ const downloadPdf = async (qr) => {
     const cardYFront = 70
     const cardYBack = cardYFront + cardH + gap
 
-    const logoUclago = '../../public/img/uclago_logo.png'
-    const facultyLogoPlaceholder = '../../public/img/uclago_logo.png'
+    const logoUclago = '/img/uclago_logo.png'
+    const facultyLogoPlaceholder = '/img/uclago_logo.png'
 
     const qrImg = await QRCode.toDataURL(qr.token, { width: 400 })
 
