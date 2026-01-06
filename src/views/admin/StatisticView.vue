@@ -180,6 +180,47 @@ const downloadPdf = () => {
       y += chartSize + 10
     }
 
+    // LISTA DE ESTUDIANTES
+    if (stats.value?.students_list?.length) {
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(14)
+      pdf.setTextColor(33)
+      pdf.text('Detalle de estudiantes', 20, y)
+      y += 6
+
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+
+      // Encabezados
+      pdf.setTextColor(120)
+      pdf.text('Nombre', 20, y)
+      pdf.text('Apellido', 65, y)
+      pdf.text('Cédula', 110, y)
+      pdf.text('Total Bs', 160, y, { align: 'right' })
+      y += 4
+
+      pdf.setDrawColor(230)
+      pdf.line(20, y, 190, y)
+      y += 4
+
+      pdf.setTextColor(33)
+
+      for (const s of stats.value.students_list) {
+        if (y > 270) {
+          pdf.addPage()
+          y = 20
+        }
+
+        pdf.text(s.first_name, 20, y)
+        pdf.text(s.last_name, 65, y)
+        pdf.text(s.dni, 110, y)
+        pdf.text(`Bs ${s.total.toFixed(2)}`, 190, y, {
+          align: 'right',
+        })
+        y += 6
+      }
+    }
+
     pdf.save('estadisticas-ce.pdf')
   } catch (err) {
     toast.error(err.message || 'Error generando el pdf', {
@@ -264,6 +305,54 @@ onMounted(fetchStats)
 
         <Pie :data="chartData" />
       </div>
+    </div>
+
+    <!-- LISTA DE ESTUDIANTES -->
+    <div
+      v-if="stats?.students_list?.length"
+      class="bg-white rounded-xl shadow overflow-hidden"
+    >
+      <div class="px-4 py-3 border-b">
+        <h3 class="text-sm font-semibold">
+          Estudiantes que realizaron recargas
+        </h3>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="px-4 py-2 text-left">Nombre</th>
+              <th class="px-4 py-2 text-left">Apellido</th>
+              <th class="px-4 py-2 text-left">Cédula</th>
+              <th class="px-4 py-2 text-right">Total Bs</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y">
+            <tr
+              v-for="(s, idx) in stats.students_list"
+              :key="idx"
+              class="hover:bg-slate-50"
+            >
+              <td class="px-4 py-2">{{ s.first_name }}</td>
+              <td class="px-4 py-2">{{ s.last_name }}</td>
+              <td class="px-4 py-2">{{ s.dni }}</td>
+              <td class="px-4 py-2 text-right font-medium">
+                Bs {{ s.total.toFixed(2) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div
+      v-else
+      class="bg-white p-6 rounded-xl shadow text-center text-slate-500"
+    >
+      No hay recargas registradas en este período
     </div>
   </div>
 </template>

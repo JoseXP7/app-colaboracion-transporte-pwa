@@ -45,7 +45,9 @@ onMounted(async () => {
   wallet.value = data?.balance_bs ?? 0
   walletLoading.value = false
 
-  transactions.value = await fetchTransactions(4)
+  transactions.value = await fetchTransactions({
+    limit: 10,
+  })
   if (error) {
     toast.error(error.message, {
       position: 'bottom-right',
