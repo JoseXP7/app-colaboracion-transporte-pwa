@@ -1,5 +1,10 @@
 <script setup>
 import { ScanQrCode, HandHeart } from 'lucide-vue-next'
+import { useUserStore } from '@/stores/userStore'
+import { computed } from 'vue'
+
+const userStore = useUserStore()
+const isLoggedIn = computed(() => !!userStore.user)
 </script>
 
 <template>
@@ -15,9 +20,11 @@ import { ScanQrCode, HandHeart } from 'lucide-vue-next'
         <span class="font-semibold text-slate-900"> UCLAGo </span>
       </div>
 
-      <RouterLink to="/login" class="text-sm font-medium text-primary"
-        >Iniciar sesión</RouterLink
-      >
+      <template v-if="!isLoggedIn">
+        <RouterLink to="/login" class="text-sm font-medium text-primary"
+          >Iniciar sesión</RouterLink
+        >
+      </template>
     </header>
 
     <!-- Hero -->
@@ -73,19 +80,29 @@ import { ScanQrCode, HandHeart } from 'lucide-vue-next'
 
       <!-- CTA -->
       <div class="w-full max-w-sm space-y-4">
-        <RouterLink
-          to="/register"
-          class="w-full h-14 rounded-2xl bg-primary text-white font-semibold text-base grid items-center justify-center shadow-lg hover:opacity-90 transition active:scale-[0.97]"
-        >
-          Comenzar
-        </RouterLink>
+        <template v-if="!isLoggedIn">
+          <RouterLink
+            to="/register"
+            class="w-full h-14 rounded-2xl bg-primary text-white font-semibold text-base grid items-center justify-center shadow-lg hover:opacity-90 transition active:scale-[0.97]"
+          >
+            Comenzar
+          </RouterLink>
 
-        <RouterLink
-          to="/login"
-          class="w-full h-14 rounded-2xl bg-slate-100 text-slate-800 grid items-center justify-center font-medium hover:bg-slate-200 transition"
-        >
-          Ya tengo cuenta
-        </RouterLink>
+          <RouterLink
+            to="/login"
+            class="w-full h-14 rounded-2xl bg-slate-100 text-slate-800 grid items-center justify-center font-medium hover:bg-slate-200 transition"
+          >
+            Ya tengo cuenta
+          </RouterLink>
+        </template>
+        <template v-else>
+          <RouterLink
+            to="/resume"
+            class="w-full h-14 rounded-2xl bg-primary text-white font-semibold text-base grid items-center justify-center shadow-lg hover:opacity-90 transition active:scale-[0.97]"
+          >
+            Entrar
+          </RouterLink>
+        </template>
       </div>
     </main>
 
