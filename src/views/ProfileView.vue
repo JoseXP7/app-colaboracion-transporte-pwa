@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import NotificationsCard from '@/components/NotificationsCard.vue'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ShieldUser } from 'lucide-vue-next'
 
@@ -106,6 +107,11 @@ const logout = async () => {
           {{ profile.phone_number }}
         </p>
       </div>
+    </div>
+
+    <!-- Notifications Card -->
+    <div class="mt-6">
+      <NotificationsCard />
     </div>
 
     <!-- Actions -->

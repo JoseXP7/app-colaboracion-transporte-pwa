@@ -21,3 +21,7 @@ try {
 } catch (e) {
   // graceful fallback if the virtual module is unavailable in dev
 }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+}
