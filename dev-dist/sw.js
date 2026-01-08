@@ -10,80 +10,112 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+importScripts(
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
+)
+importScripts(
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js'
+)
+
+firebase.initializeApp({
+  apiKey: 'AIzaSyBfQBfctuUiksnOIGkyf2MEEeVbdHN8dJE',
+  authDomain: 'uclago-7f303.firebaseapp.com',
+  projectId: 'uclago-7f303',
+  storageBucket: 'uclago-7f303.firebasestorage.app',
+  messagingSenderId: '479562873238',
+  appId: '1:479562873238:web:ce442197790cf0fa53c5b7',
+})
+
+const messaging = firebase.messaging()
+
+messaging.onBackgroundMessage((payload) => {
+  self.registration.showNotification(payload.notification?.title || 'UCLAGO', {
+    body: payload.notification?.body || 'Nueva notificación',
+    icon: '/img/uclago_logo.png',
+  })
+})
 
 // If the loader is already loaded, just stop.
 if (!self.define) {
-  let registry = {};
+  let registry = {}
 
   // Used for `eval` and `importScripts` where we can't get script URL by other means.
   // In both cases, it's safe to use a global var because those functions are synchronous.
-  let nextDefineUri;
+  let nextDefineUri
 
   const singleRequire = (uri, parentUri) => {
-    uri = new URL(uri + ".js", parentUri).href;
-    return registry[uri] || (
-      
-        new Promise(resolve => {
-          if ("document" in self) {
-            const script = document.createElement("script");
-            script.src = uri;
-            script.onload = resolve;
-            document.head.appendChild(script);
-          } else {
-            nextDefineUri = uri;
-            importScripts(uri);
-            resolve();
-          }
-        })
-      
-      .then(() => {
-        let promise = registry[uri];
-        if (!promise) {
-          throw new Error(`Module ${uri} didn’t register its module`);
+    uri = new URL(uri + '.js', parentUri).href
+    return (
+      registry[uri] ||
+      new Promise((resolve) => {
+        if ('document' in self) {
+          const script = document.createElement('script')
+          script.src = uri
+          script.onload = resolve
+          document.head.appendChild(script)
+        } else {
+          nextDefineUri = uri
+          importScripts(uri)
+          resolve()
         }
-        return promise;
+      }).then(() => {
+        let promise = registry[uri]
+        if (!promise) {
+          throw new Error(`Module ${uri} didn’t register its module`)
+        }
+        return promise
       })
-    );
-  };
+    )
+  }
 
   self.define = (depsNames, factory) => {
-    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
+    const uri =
+      nextDefineUri ||
+      ('document' in self ? document.currentScript.src : '') ||
+      location.href
     if (registry[uri]) {
       // Module is already loading or loaded.
-      return;
+      return
     }
-    let exports = {};
-    const require = depUri => singleRequire(depUri, uri);
+    let exports = {}
+    const require = (depUri) => singleRequire(depUri, uri)
     const specialDeps = {
       module: { uri },
       exports,
-      require
-    };
-    registry[uri] = Promise.all(depsNames.map(
-      depName => specialDeps[depName] || require(depName)
-    )).then(deps => {
-      factory(...deps);
-      return exports;
-    });
-  };
+      require,
+    }
+    registry[uri] = Promise.all(
+      depsNames.map((depName) => specialDeps[depName] || require(depName))
+    ).then((deps) => {
+      factory(...deps)
+      return exports
+    })
+  }
 }
-define(['./workbox-5a5d9309'], (function (workbox) { 'use strict';
+define(['./workbox-5a5d9309'], function (workbox) {
+  'use strict'
 
-  self.skipWaiting();
-  workbox.clientsClaim();
+  self.skipWaiting()
+  workbox.clientsClaim()
 
   /**
    * The precacheAndRoute() method efficiently caches and responds to
    * requests for URLs in the manifest.
    * See https://goo.gl/S9QRab
    */
-  workbox.precacheAndRoute([{
-    "url": "index.html",
-    "revision": "0.nb0db2pubu"
-  }], {});
-  workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/]
-  }));
-
-}));
+  workbox.precacheAndRoute(
+    [
+      {
+        url: 'index.html',
+        revision: '0.nb0db2pubu',
+      },
+    ],
+    {}
+  )
+  workbox.cleanupOutdatedCaches()
+  workbox.registerRoute(
+    new workbox.NavigationRoute(workbox.createHandlerBoundToURL('index.html'), {
+      allowlist: [/^\/$/],
+    })
+  )
+})

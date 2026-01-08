@@ -2,47 +2,34 @@
 import { Button } from '@/components/ui/button'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 
-const { permission, loading, error, enableNotifications } =
+const { permission, enableNotifications, loading, error } =
   usePushNotifications()
-
-const activate = async () => {
-  await enableNotifications()
-}
 </script>
 
 <template>
-  <div class="rounded-2xl border bg-white p-4 space-y-3 shadow-sm">
-    <h3 class="font-semibold flex items-center gap-2">🔔 Notificaciones</h3>
+  <div class="bg-white rounded-2xl p-4 shadow space-y-2">
+    <h3 class="font-semibold text-sm">Notificaciones</h3>
 
-    <p class="text-sm text-slate-500">
-      Recibe una notificación cuando tu recarga sea aprobada.
+    <p class="text-xs text-slate-500">
+      Recibe un aviso cuando tu recarga sea aprobada.
     </p>
 
-    <!-- BOTÓN -->
     <Button
       v-if="permission === 'default'"
       :disabled="loading"
-      @click="activate"
+      @click="enableNotifications"
     >
-      {{ loading ? 'Activando…' : 'Activar notificaciones' }}
+      Activar notificaciones
     </Button>
 
-    <!-- ESTADO OK -->
-    <div
-      v-else-if="permission === 'granted'"
-      class="text-sm text-green-600 font-medium"
-    >
-      ✅ Notificaciones activadas correctamente
-    </div>
-
-    <!-- BLOQUEADO -->
-    <div v-else class="text-sm text-red-500">
-      ❌ Las notificaciones están bloqueadas en tu navegador
-    </div>
-
-    <!-- ERROR -->
-    <p v-if="error" class="text-xs text-red-500">
-      {{ error }}
+    <p v-if="permission === 'granted'" class="text-green-600 text-xs">
+      Notificaciones activadas
     </p>
+
+    <p v-if="permission === 'denied'" class="text-red-600 text-xs">
+      Notificaciones bloqueadas por el navegador
+    </p>
+
+    <p v-if="error" class="text-red-500 text-xs">{{ error }}</p>
   </div>
 </template>
