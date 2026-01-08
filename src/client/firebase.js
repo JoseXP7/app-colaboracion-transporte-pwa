@@ -2,14 +2,15 @@ import { initializeApp } from 'firebase/app'
 import { getMessaging, getToken } from 'firebase/messaging'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBfQBfctuUiksnOIGkyf2MEEeVbdHN8dJE',
-  authDomain: 'uclago-7f303.firebaseapp.com',
-  projectId: 'uclago-7f303',
-  storageBucket: 'uclago-7f303.firebasestorage.app',
-  messagingSenderId: '479562873238',
-  appId: '1:479562873238:web:ce442197790cf0fa53c5b7',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 export const firebaseApp = initializeApp(firebaseConfig)
 export const messaging = getMessaging(firebaseApp)
 export { getToken }
+navigator.serviceWorker.register('/firebase-messaging-sw.js')

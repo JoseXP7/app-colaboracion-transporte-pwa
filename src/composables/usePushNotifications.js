@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { messaging, getToken } from '@/lib/firebase'
+import { messaging, getToken } from '@/client/firebase'
 import { useSupabase } from '@/client/supabase'
 import { useUserStore } from '@/stores/userStore'
 
