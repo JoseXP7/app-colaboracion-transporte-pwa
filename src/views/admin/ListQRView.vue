@@ -16,6 +16,16 @@ const userStore = useUserStore()
 const loading = ref(false)
 const qrs = ref([])
 
+const facultyAcronyms = {
+  1: 'DCS',
+  2: 'DCEE',
+  3: 'DAG',
+  4: 'DCV',
+  5: 'DCYT',
+  6: 'DEHA',
+  7: 'DIC',
+}
+
 const fetchQrs = async () => {
   loading.value = true
   try {
@@ -160,7 +170,9 @@ const downloadPdf = async (qr) => {
     doc.setFontSize(6)
     doc.setTextColor(150)
     doc.text(
-      'Espacio reservado para branding de la facultad',
+      `Centro de Estudiantes del ${
+        facultyAcronyms[userStore.profile.faculty_id]
+      }`,
       cardX + cardW / 2,
       cardYBack + cardH - 6,
       { align: 'center' }
@@ -195,6 +207,31 @@ const downloadPdf = async (qr) => {
     toast.success('PDF generado correctamente')
   } catch (err) {
     toast.error(err.message || 'Error generando el PDF', {
+      position: 'bottom-right',
+      duration: 5000,
+      style: {
+        backgroundColor: 'var(--destructive)',
+        color: '#fff',
+        border: 'none',
+      },
+    })
+  }
+}
+
+const disableQr = async (qrId) => {
+  try {
+    const { error } = await supabase
+      .from('qr_codes')
+      .update({ is_active: false })
+      .eq('id', qrId)
+      .eq('faculty_id', userStore.profile.faculty_id)
+
+    if (error) throw error
+
+    toast.success('QR inhabilitado correctamente')
+    fetchQrs()
+  } catch (err) {
+    toast.error(err.message || 'Error inhabilitando el QR', {
       position: 'bottom-right',
       duration: 5000,
       style: {
@@ -242,13 +279,22 @@ onMounted(fetchQrs)
         </div>
 
         <div class="flex items-center gap-3">
-          <Badge :variant="qr.is_active ? 'outline' : 'destructive'">
-            {{ qr.is_active ? 'Activo' : 'Usado' }}
+          <Badge :variant="qr.is_active ? '' : 'destructive'">
+            {{ qr.is_active ? 'Activo' : 'Inhabilitado' }}
           </Badge>
 
           <Button size="sm" variant="outline" @click="downloadPdf(qr)">
             <Download class="w-4 h-4 mr-1" />
             PDF
+          </Button>
+
+          <Button
+            v-if="qr.is_active"
+            size="sm"
+            variant="destructive"
+            @click="disableQr(qr.id)"
+          >
+            Inhabilitar
           </Button>
         </div>
       </div>

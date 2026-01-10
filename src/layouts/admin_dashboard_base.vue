@@ -49,7 +49,7 @@ watch(isQrRoute, (val) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-100 flex">
+  <div class="h-screen bg-slate-100 flex overflow-hidden">
     <!-- OVERLAY (solo móvil) -->
     <div
       v-if="isSidebarOpen"
@@ -59,7 +59,7 @@ watch(isQrRoute, (val) => {
 
     <!-- SIDEBAR -->
     <aside
-      class="fixed z-40 inset-y-0 left-0 w-64 bg-white border-r flex flex-col transform transition-transform duration-200 md:static md:translate-x-0 md:flex"
+      class="fixed z-40 inset-y-0 left-0 w-64 bg-white border-r flex flex-col transform transition-transform duration-200 md:static md:translate-x-0 md:flex h-screen overflow-y-auto"
       :class="{
         '-translate-x-full md:translate-x-0': !isSidebarOpen,
         'translate-x-0': isSidebarOpen,
@@ -174,15 +174,11 @@ watch(isQrRoute, (val) => {
           <User class="w-4 h-4 mr-2" />
           Ir a Perfil
         </Button>
-        <Button variant="outline" class="w-full" @click="userStore.logout()">
-          <LogOut class="w-4 h-4 mr-2" />
-          Salir
-        </Button>
       </div>
     </aside>
 
     <!-- CONTENT -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col overflow-y-auto">
       <!-- TOP BAR -->
       <header class="bg-white border-b p-4 flex items-center justify-between">
         <div class="flex items-center gap-3">

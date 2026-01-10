@@ -174,7 +174,7 @@ const nextStep = async () => {
       </RouterLink>
 
       <h1 class="text-lg font-semibold text-slate-900 tracking-tight">
-        Perfil
+        Recargar
       </h1>
     </div>
 

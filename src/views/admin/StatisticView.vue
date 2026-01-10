@@ -11,10 +11,18 @@ import {
   BarElement,
 } from 'chart.js'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { useSupabase } from '@/client/supabase'
 import { useUserStore } from '@/stores/userStore'
 import jsPDF from 'jspdf'
 import { toast } from 'vue-sonner'
+import { Loader2 } from 'lucide-vue-next'
 import { format } from 'date-fns'
 
 ChartJS.register(
@@ -33,6 +41,16 @@ const period = ref('monthly') // day | month | year
 const loading = ref(false)
 
 const stats = ref(null)
+
+const facultyAcronyms = {
+  1: 'DCS',
+  2: 'DCEE',
+  3: 'DAG',
+  4: 'DCV',
+  5: 'DCYT',
+  6: 'DEHA',
+  7: 'DIC',
+}
 
 const fetchStats = async () => {
   loading.value = true
@@ -84,6 +102,10 @@ const downloadPdf = () => {
   try {
     const pdf = new jsPDF('p', 'mm', 'a4')
     let y = 22
+
+    //Imagenes - Header
+    const logoUclago = '/img/uclago_logo.png'
+    pdf.addImage(logoUclago, 'PNG', 10, 10, 28, 28)
     // Fecha y hora actual en la esquina superior derecha
     const now = new Date()
     const fechaHora = format(now, 'dd/MM/yyyy HH:mm')
@@ -96,7 +118,12 @@ const downloadPdf = () => {
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(22)
     pdf.setTextColor(0, 0, 0)
-    pdf.text('Estadísticas', 105, y, { align: 'center' })
+    pdf.text(
+      `Estadisticas - ${facultyAcronyms[userStore.profile.faculty_id]}`,
+      105,
+      y,
+      { align: 'center' }
+    )
     y += 10
     // Subtítulo de rango de periodo
     let periodoLabel = ''
@@ -221,7 +248,11 @@ const downloadPdf = () => {
       }
     }
 
-    pdf.save('estadisticas-ce.pdf')
+    pdf.save(
+      `estadisticas_ce_${period.value}_${
+        new Date().toISOString().split('T')[0]
+      }.pdf`
+    )
   } catch (err) {
     toast.error(err.message || 'Error generando el pdf', {
       position: 'bottom-right',
@@ -244,18 +275,21 @@ onMounted(fetchStats)
   <div class="space-y-6" id="stats-pdf">
     <!-- Header -->
     <div class="flex justify-between items-center">
-      <h1 class="text-xl font-semibold">Estadísticas</h1>
+      <h1 class="text-xl font-semibold">
+        Estadísticas <Loader2 v-if="loading" class="animate-spin ml-2 inline" />
+      </h1>
 
       <div class="flex gap-2">
-        <select
-          v-model="period"
-          @change="fetchStats"
-          class="border rounded-lg px-3 py-2 text-sm"
-        >
-          <option value="daily">Diario</option>
-          <option value="monthly">Mensual</option>
-          <option value="yearly">Anual</option>
-        </select>
+        <Select v-model="period" @update:modelValue="fetchStats">
+          <SelectTrigger>
+            <SelectValue placeholder="Periodo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Hoy</SelectItem>
+            <SelectItem value="monthly">Mensual</SelectItem>
+            <SelectItem value="yearly">Anual</SelectItem>
+          </SelectContent>
+        </Select>
 
         <Button :disabled="!stats || loading" @click="downloadPdf">
           Descargar PDF
@@ -299,51 +333,57 @@ onMounted(fetchStats)
     </div>
 
     <!-- Charts -->
-    <div class="grid md:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-xl shadow" v-if="chartData">
-        <h3 class="text-sm font-medium mb-4">Distribución de recargas</h3>
-
-        <Pie :data="chartData" />
-      </div>
-    </div>
-
-    <!-- LISTA DE ESTUDIANTES -->
+    <!-- CHART + LIST WRAPPER -->
     <div
-      v-if="stats?.students_list?.length"
-      class="bg-white rounded-xl shadow overflow-hidden"
+      v-if="chartData && stats?.students_list?.length"
+      class="grid grid-cols-1 md:grid-cols-3 gap-6"
     >
-      <div class="px-4 py-3 border-b">
-        <h3 class="text-sm font-semibold">
-          Estudiantes que realizaron recargas
-        </h3>
+      <!-- PIE CHART -->
+      <div class="bg-white p-4 rounded-xl shadow md:col-span-1">
+        <h3 class="text-sm font-medium mb-3">Distribución de recargas</h3>
+
+        <!-- Contenedor que limita tamaño -->
+        <div class="max-w-xs mx-auto">
+          <Pie :data="chartData" />
+        </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-50 text-slate-600">
-            <tr>
-              <th class="px-4 py-2 text-left">Nombre</th>
-              <th class="px-4 py-2 text-left">Apellido</th>
-              <th class="px-4 py-2 text-left">Cédula</th>
-              <th class="px-4 py-2 text-right">Total Bs</th>
-            </tr>
-          </thead>
+      <!-- LISTA DE ESTUDIANTES -->
+      <div class="bg-white rounded-xl shadow overflow-hidden md:col-span-2">
+        <div class="px-4 py-3 border-b">
+          <h3 class="text-sm font-semibold">
+            Estudiantes que realizaron recargas
+          </h3>
+        </div>
 
-          <tbody class="divide-y">
-            <tr
-              v-for="(s, idx) in stats.students_list"
-              :key="idx"
-              class="hover:bg-slate-50"
-            >
-              <td class="px-4 py-2">{{ s.first_name }}</td>
-              <td class="px-4 py-2">{{ s.last_name }}</td>
-              <td class="px-4 py-2">{{ s.dni }}</td>
-              <td class="px-4 py-2 text-right font-medium">
-                Bs {{ s.total.toFixed(2) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- SCROLL AQUÍ -->
+        <div class="overflow-x-auto max-h-105 overflow-y-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 sticky top-0">
+              <tr>
+                <th class="px-4 py-2 text-left">Nombre</th>
+                <th class="px-4 py-2 text-left">Apellido</th>
+                <th class="px-4 py-2 text-left">Cédula</th>
+                <th class="px-4 py-2 text-right">Total Bs</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y">
+              <tr
+                v-for="(s, idx) in stats.students_list"
+                :key="idx"
+                class="hover:bg-slate-50"
+              >
+                <td class="px-4 py-2">{{ s.first_name }}</td>
+                <td class="px-4 py-2">{{ s.last_name }}</td>
+                <td class="px-4 py-2">{{ s.dni }}</td>
+                <td class="px-4 py-2 text-right font-medium">
+                  Bs {{ s.total.toFixed(2) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 

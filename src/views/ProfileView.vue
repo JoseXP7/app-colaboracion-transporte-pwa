@@ -1,9 +1,26 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import NotificationsCard from '@/components/NotificationsCard.vue'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ShieldUser } from 'lucide-vue-next'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+} from '@/components/ui/field'
+import { toast } from 'vue-sonner'
+import { useSupabase } from '@/client/supabase'
+import { ChevronLeft, ShieldUser, Loader2 } from 'lucide-vue-next'
+import { editPhoneSchema } from '@/schemas/editPhone.schema'
 
 import { useUserStore } from '@/stores/userStore'
 import { useAuth } from '@/composables/useAuth'
@@ -14,6 +31,17 @@ const { signOut } = useAuth()
 
 const profile = computed(() => userStore.profile)
 const user = computed(() => userStore.user)
+
+const { supabase } = useSupabase()
+
+const editOpen = ref(false)
+const loading = ref(false)
+
+const form = ref({
+  phone_number: '',
+})
+
+const errors = ref({})
 
 const facultyAcronyms = {
   1: 'DCS',
@@ -31,6 +59,49 @@ const initials = computed(() => {
     profile.value.first_name.charAt(0) + profile.value.last_name.charAt(0)
   ).toUpperCase()
 })
+
+const openEditDialog = () => {
+  errors.value = {}
+  form.value.phone_number = profile.value.phone_number || ''
+  editOpen.value = true
+}
+
+const savePhoneNumber = async () => {
+  errors.value = {}
+  loading.value = true
+
+  const result = editPhoneSchema.safeParse(form.value)
+
+  if (!result.success) {
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0]
+      errors.value[field] = issue.message
+    })
+    loading.value = false
+    return
+  }
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        phone_number: result.data.phone_number,
+      })
+      .eq('id', profile.value.id)
+
+    if (error) throw error
+
+    // sincronizamos store
+    userStore.profile.phone_number = result.data.phone_number
+
+    toast.success('Teléfono actualizado correctamente')
+    editOpen.value = false
+  } catch (err) {
+    toast.error(err.message || 'Error al actualizar el teléfono')
+  } finally {
+    loading.value = false
+  }
+}
 
 const logout = async () => {
   await signOut()
@@ -116,7 +187,12 @@ const logout = async () => {
 
     <!-- Actions -->
     <div class="mt-6 space-y-4">
-      <Button class="w-full" size="lg" variant="outline">
+      <Button
+        class="w-full"
+        size="lg"
+        variant="outline"
+        @click="openEditDialog"
+      >
         Editar perfil
       </Button>
 
@@ -127,5 +203,47 @@ const logout = async () => {
 
     <!-- Footer -->
     <p class="mt-8 text-center text-xs text-slate-500">UCLAGo · v1.0</p>
+
+    <Dialog :open="editOpen" @update:open="editOpen = $event">
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Editar teléfono</DialogTitle>
+    </DialogHeader>
+
+    <form @submit.prevent="savePhoneNumber" class="space-y-5">
+      <FieldGroup>
+        <Field>
+          <FieldLabel for="phone_number">Teléfono</FieldLabel>
+          <Input
+            id="phone_number"
+            type="tel"
+            placeholder="04141234567"
+            v-model="form.phone_number"
+            :aria-invalid="!!errors.phone_number"
+          />
+          <FieldError v-if="errors.phone_number">
+            {{ errors.phone_number }}
+          </FieldError>
+        </Field>
+      </FieldGroup>
+
+      <div class="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          @click="editOpen = false"
+        >
+          Cancelar
+        </Button>
+
+        <Button type="submit" :disabled="loading">
+          <Loader2 v-if="loading" class="w-4 h-4 mr-2 animate-spin" />
+          {{ loading ? 'Guardando...' : 'Guardar cambios' }}
+        </Button>
+      </div>
+    </form>
+  </DialogContent>
+</Dialog>
+
   </div>
 </template>

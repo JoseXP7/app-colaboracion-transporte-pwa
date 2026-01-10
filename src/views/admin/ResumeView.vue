@@ -27,6 +27,7 @@ import {
   Clock,
   Calendar as CalendarIcon,
   ArrowUpRight,
+  Loader2,
 } from 'lucide-vue-next'
 
 import { format } from 'date-fns'
@@ -59,76 +60,25 @@ const recentTransactions = ref([])
 const fetchData = async () => {
   loading.value = true
 
-  const facultyId = userStore.profile.faculty_id
+  const { data, error } = await supabase.rpc('get_faculty_resume_by_date', {
+    p_faculty_id: userStore.profile.faculty_id,
+    p_mode: filterMode.value,
+    p_date: `${selectedDate.value.year}-${String(
+      selectedDate.value.month
+    ).padStart(2, '0')}-${String(selectedDate.value.day).padStart(2, '0')}`,
+  })
 
-  let fromDate
-  let toDate
-
-  // Convertimos CalendarDate a Date nativo para filtrar
-  const jsDate = selectedDate.value.toDate(getLocalTimeZone())
-  // Rango para el filtro (día o mes)
-  let filterFromDate, filterToDate
-  if (filterMode.value === 'day') {
-    const yyyyMMdd = jsDate.toISOString().split('T')[0]
-    filterFromDate = `${yyyyMMdd}T00:00:00`
-    filterToDate = `${yyyyMMdd}T23:59:59`
-  } else {
-    const year = jsDate.getFullYear()
-    const month = jsDate.getMonth()
-    filterFromDate = new Date(year, month, 1).toISOString()
-    filterToDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
+  if (error) {
+    console.error(error)
+    loading.value = false
+    return
   }
 
-  // Rango para el total recaudado (siempre mes)
-  const year = jsDate.getFullYear()
-  const month = jsDate.getMonth()
-  fromDate = new Date(year, month, 1).toISOString()
-  toDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
+  stats.value.total = data.total
+  stats.value.pending = data.pending
+  stats.value.today = data.today
 
-  /* TOTAL RECAUDADO (siempre por mes) */
-  const { data: totalTx } = await supabase
-    .from('transactions')
-    .select('amount_bs')
-    .eq('faculty_id', facultyId)
-    .eq('type', 'recarga')
-    .gte('created_at', fromDate)
-    .lte('created_at', toDate)
-
-  stats.value.total =
-    totalTx?.reduce((acc, t) => acc + Number(t.amount_bs), 0) || 0
-
-  /* PENDIENTES */
-  const { count } = await supabase
-    .from('topup_requests')
-    .select('*', { count: 'exact', head: true })
-    .eq('faculty_id', facultyId)
-    .eq('status', 'pendiente')
-
-  stats.value.pending = count || 0
-
-  /* HOY */
-  const todayISO = new Date().toISOString().split('T')[0]
-
-  const { data: todayTx } = await supabase
-    .from('transactions')
-    .select('amount_bs')
-    .eq('faculty_id', facultyId)
-    .gte('created_at', `${todayISO}T00:00:00`)
-
-  stats.value.today =
-    todayTx?.reduce((acc, t) => acc + Number(t.amount_bs), 0) || 0
-
-  /* ÚLTIMAS TRANSACCIONES FILTRADAS */
-  const { data } = await supabase
-    .from('transactions')
-    .select('id, amount_bs, type, created_at')
-    .eq('faculty_id', facultyId)
-    .gte('created_at', filterFromDate)
-    .lte('created_at', filterToDate)
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  recentTransactions.value = data || []
+  recentTransactions.value = data.transactions || []
 
   loading.value = false
 }
@@ -149,7 +99,8 @@ onMounted(fetchData)
     <!-- HEADER -->
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-semibold text-slate-900">
-        Resumen del Centro de Estudiantes
+        <Loader2 v-if="loading" class="animate-spin mr-2 inline" /> Resumen del
+        Centro de Estudiantes
       </h1>
 
       <Button variant="outline" @click="filterOpen = true" class="relative">
