@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Eye, EyeOff } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ const router = useRouter()
 const { loginWithPassw } = useAuth()
 
 const loading = ref(false)
+const showPassword = ref(false)
 const form = ref({
   email: '',
   password: '',
@@ -98,14 +99,32 @@ const submit = async () => {
 
             <!-- Password -->
             <Field>
-              <FieldLabel for="password">Contraseña</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                v-model="form.password"
-                :aria-invalid="!!errors.password"
-              />
+              <div class="flex justify-between items-center">
+                <FieldLabel for="password">Contraseña</FieldLabel>
+                <RouterLink
+                  to="/forgot-password"
+                  class="text-sm text-primary hover:underline float-right mt-1"
+                >
+                  ¿Olvidaste tu contraseña?
+                </RouterLink>
+              </div>
+              <div class="relative">
+                <Input
+                  id="password"
+                  placeholder="••••••••"
+                  v-model="form.password"
+                  :aria-invalid="!!errors.password"
+                  :type="showPassword ? 'text' : 'password'"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
+                  <Eye class="w-5 h-5 text-slate-500" v-if="!showPassword" />
+                  <EyeOff class="w-5 h-5 text-slate-500" v-else />
+                </button>
+              </div>
               <FieldError v-if="errors.password">
                 {{ errors.password }}
               </FieldError>

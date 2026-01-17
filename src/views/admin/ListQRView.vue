@@ -26,6 +26,16 @@ const facultyAcronyms = {
   7: 'DIC',
 }
 
+const facultyLogos = {
+  1: '/img/uclago_logo.png',
+  2: '/img/uclago_logo.png',
+  3: '/img/uclago_logo.png',
+  4: '/img/faculties/dcv_logo.png',
+  5: '/img/faculties/dcyt_logo.png',
+  6: '/img/uclago_logo.png',
+  7: '/img/uclago_logo.png',
+}
+
 const fetchQrs = async () => {
   loading.value = true
   try {
@@ -38,7 +48,7 @@ const fetchQrs = async () => {
         amount_bs,
         is_active,
         created_at
-      `
+      `,
       )
       .eq('faculty_id', userStore.profile.faculty_id)
       .order('created_at', { ascending: false })
@@ -76,7 +86,7 @@ const downloadPdf = async (qr) => {
     const cardYBack = cardYFront + cardH + gap
 
     const logoUclago = '/img/uclago_logo.png'
-    const facultyLogoPlaceholder = '/img/uclago_logo.png'
+    const facultyLogoPlaceholder = facultyLogos[userStore.profile.faculty_id]
 
     const qrImg = await QRCode.toDataURL(qr.token, { width: 400 })
 
@@ -94,7 +104,7 @@ const downloadPdf = async (qr) => {
       'Recorte la tarjeta completa, doble por la línea central y plastifique.\nEl QR puede circular entre usuarios durante el trayecto.',
       105,
       26,
-      { align: 'center', maxWidth: 170 }
+      { align: 'center', maxWidth: 170 },
     )
 
     doc.setTextColor(0)
@@ -115,7 +125,7 @@ const downloadPdf = async (qr) => {
       cardX + cardW - 18,
       cardYFront + 1,
       10,
-      10
+      10,
     )
 
     // QR
@@ -164,7 +174,7 @@ const downloadPdf = async (qr) => {
       ],
       cardX + 6,
       cardYBack + 18,
-      { maxWidth: cardW - 12 }
+      { maxWidth: cardW - 12 },
     )
 
     doc.setFontSize(6)
@@ -175,7 +185,7 @@ const downloadPdf = async (qr) => {
       }`,
       cardX + cardW / 2,
       cardYBack + cardH - 6,
-      { align: 'center' }
+      { align: 'center' },
     )
 
     /* ======================================================
@@ -187,7 +197,7 @@ const downloadPdf = async (qr) => {
       cardX,
       cardYFront + cardH + gap / 2,
       cardX + cardW,
-      cardYFront + cardH + gap / 2
+      cardYFront + cardH + gap / 2,
     )
     doc.setLineDash([])
 
@@ -200,7 +210,7 @@ const downloadPdf = async (qr) => {
       'Indicaciones para el CE:\n• Recortar una sola pieza.\n• Doblar por la línea punteada.\n• Plastificar para mayor durabilidad.\n• El QR puede pasarse entre usuarios.',
       105,
       cardYBack + cardH + 22,
-      { align: 'center', maxWidth: 180 }
+      { align: 'center', maxWidth: 180 },
     )
 
     doc.save(`UCLAGo_QR_${qr.amount_bs}_bs.pdf`)

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Eye, EyeOff } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ const router = useRouter()
 const { signUpWithPassw } = useAuth()
 
 const loading = ref(false)
+const showPassword = ref(false)
 const form = ref({
   email: '',
   password: '',
@@ -106,13 +107,23 @@ const submit = async () => {
             <!-- Password -->
             <Field>
               <FieldLabel for="password">Contraseña</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                v-model="form.password"
-                :aria-invalid="!!errors.password"
-              />
+              <div class="relative">
+                <Input
+                  id="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  v-model="form.password"
+                  :aria-invalid="!!errors.password"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
+                  <Eye class="w-5 h-5 text-slate-500" v-if="!showPassword" />
+                  <EyeOff class="w-5 h-5 text-slate-500" v-else />
+                </button>
+              </div>
               <FieldError v-if="errors.password">
                 {{ errors.password }}
               </FieldError>
@@ -123,13 +134,23 @@ const submit = async () => {
               <FieldLabel for="passwordConfirm">
                 Confirmar contraseña
               </FieldLabel>
-              <Input
-                id="passwordConfirm"
-                type="password"
-                placeholder="••••••••"
-                v-model="form.passwordConfirm"
-                :aria-invalid="!!errors.passwordConfirm"
-              />
+              <div class="relative">
+                <Input
+                  id="passwordConfirm"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  v-model="form.passwordConfirm"
+                  :aria-invalid="!!errors.passwordConfirm"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
+                  <Eye class="w-5 h-5 text-slate-500" v-if="!showPassword" />
+                  <EyeOff class="w-5 h-5 text-slate-500" v-else />
+                </button>
+              </div>
               <FieldError v-if="errors.passwordConfirm">
                 {{ errors.passwordConfirm }}
               </FieldError>

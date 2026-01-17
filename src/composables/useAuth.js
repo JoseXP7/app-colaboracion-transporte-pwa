@@ -48,14 +48,20 @@ export function useAuth() {
 
   const resetPassword = async (email) => {
     // Usa la URL de producción si está en producción, si no usa localhost
-    const redirectTo =
-      import.meta.env.VITE_REDIRECT_URL ||
-      'http://localhost:5173/reset-password'
+    const redirectTo = import.meta.env.VITE_REDIRECT_URL
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
     })
     if (error) throw error
+  }
+
+  const resetPasswordWithToken = async (form) => {
+    const res = await supabase.auth.updateUser({
+      password: form.password,
+    })
+
+    if (res?.error) throw res.error
   }
 
   const signOut = async () => {
@@ -71,5 +77,6 @@ export function useAuth() {
     loginWithPassw,
     signOut,
     resetPassword,
+    resetPasswordWithToken,
   }
 }
