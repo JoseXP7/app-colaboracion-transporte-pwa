@@ -29,7 +29,7 @@ const facultyAcronyms = {
 const facultyLogos = {
   1: '/img/uclago_logo.png',
   2: '/img/uclago_logo.png',
-  3: '/img/uclago_logo.png',
+  3: '/img/faculties/dag_logo.png',
   4: '/img/faculties/dcv_logo.png',
   5: '/img/faculties/dcyt_logo.png',
   6: '/img/uclago_logo.png',
