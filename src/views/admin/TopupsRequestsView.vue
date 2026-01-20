@@ -165,11 +165,17 @@ onMounted(fetchTopups)
         <div class="flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-slate-900">
-              {{ topup.user.first_name }} {{ topup.user.last_name }} - C.I.
-              {{ topup.user.cedula }}
+              {{
+                topup.user
+                  ? topup.user.first_name + ' ' + topup.user.last_name
+                  : 'Usuario no disponible'
+              }}
+              - C.I.
+              {{ topup.user ? topup.user.cedula : 'N/A' }}
             </p>
             <!-- WhatsApp green button -->
             <a
+              v-if="topup.user"
               :href="`https://wa.me/58${topup.user.phone_number}`"
               target="_blank"
               class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-sm text-white px-2 py-1 rounded-md mt-1 mb-1"
@@ -186,6 +192,11 @@ onMounted(fetchTopups)
                 />
               </svg>
               Contacto: {{ topup.user.phone_number }}</a
+            >
+            <span
+              v-else
+              class="inline-flex items-center gap-1 bg-slate-100 text-sm text-slate-600 px-2 py-1 rounded-md mt-1 mb-1"
+              >Contacto: N/A</span
             >
             <p class="text-xs text-slate-500">
               {{ new Date(topup.created_at).toLocaleDateString() }}
@@ -216,17 +227,24 @@ onMounted(fetchTopups)
                 <AlertDialogDescription>
                   Esta acción no se puede deshacer. Se sumara saldo a la wallet
                   del estudiante seleccionado.
-                  <p>Datos del solicitante:</p>
-                  <ul class="mt-2 list-disc list-inside">
-                    <li>
-                      <strong>Nombre:</strong>
-                      {{ topup.user.first_name }} {{ topup.user.last_name }}
-                    </li>
-                    <li><strong>Cédula:</strong> {{ topup.user.cedula }}</li>
-                    <li>
-                      <strong>Teléfono:</strong> {{ topup.user.phone_number }}
-                    </li>
-                  </ul>
+                  <div v-if="topup.user">
+                    <p>Datos del solicitante:</p>
+                    <ul class="mt-2 list-disc list-inside">
+                      <li>
+                        <strong>Nombre:</strong>
+                        {{ topup.user.first_name }} {{ topup.user.last_name }}
+                      </li>
+                      <li><strong>Cédula:</strong> {{ topup.user.cedula }}</li>
+                      <li>
+                        <strong>Teléfono:</strong> {{ topup.user.phone_number }}
+                      </li>
+                    </ul>
+                  </div>
+                  <div v-else>
+                    <p class="mt-2 text-sm text-slate-500">
+                      Datos del solicitante no disponibles.
+                    </p>
+                  </div>
                   <p>Datos de la recarga:</p>
                   <ul class="mt-2 list-disc list-inside">
                     <li>
