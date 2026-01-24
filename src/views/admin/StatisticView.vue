@@ -11,6 +11,8 @@ import {
   BarElement,
 } from 'chart.js'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectTrigger,
@@ -18,12 +20,19 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useSupabase } from '@/client/supabase'
 import { useUserStore } from '@/stores/userStore'
 import jsPDF from 'jspdf'
 import { toast } from 'vue-sonner'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Calendar as CalendarIcon } from 'lucide-vue-next'
 import { format } from 'date-fns'
+import { today, getLocalTimeZone } from '@internationalized/date'
 
 ChartJS.register(
   ArcElement,
@@ -31,14 +40,18 @@ ChartJS.register(
   Legend,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
 )
 
 const { supabase } = useSupabase()
 const userStore = useUserStore()
 
+const selectedDate = ref(today(getLocalTimeZone()))
+
 const period = ref('monthly') // day | month | year
 const loading = ref(false)
+const filterOpen = ref(false)
+const calendarFilterActive = ref(false)
 
 const stats = ref(null)
 
@@ -52,26 +65,73 @@ const facultyAcronyms = {
   7: 'DIC',
 }
 
+const applyFilter = () => {
+  // Si el usuario aplica un filtro desde el calendario,
+  // forzamos el periodo a diario para que la fecha seleccionada
+  // se interprete como un día concreto.
+  period.value = 'daily'
+  // marcar que el filtro por calendario está activo
+  calendarFilterActive.value = true
+  filterOpen.value = false
+  fetchStats()
+}
+
+// Cuando el usuario cambia el periodo desde el Select
+// reiniciamos el filtro del calendario para que el Select
+// tenga efecto (día/mes/año) sin quedar atado a una fecha previa.
+const onPeriodChange = (newVal) => {
+  period.value = newVal
+  // resetear la fecha seleccionada al día actual
+  selectedDate.value = today(getLocalTimeZone())
+  // cerrar diálogo de filtro si está abierto
+  filterOpen.value = false
+  // desactivar badge de calendario porque el usuario usó el Select
+  calendarFilterActive.value = false
+  // recargar estadísticas con el nuevo periodo
+  fetchStats()
+}
+
+const buildRange = () => {
+  const jsDate = selectedDate.value.toDate(getLocalTimeZone())
+
+  let from, to
+
+  if (period.value === 'daily') {
+    from = new Date(jsDate.setHours(0, 0, 0, 0))
+    to = new Date(jsDate.setHours(24, 0, 0, 0))
+  }
+
+  if (period.value === 'monthly') {
+    from = new Date(jsDate.getFullYear(), jsDate.getMonth(), 1)
+    to = new Date(jsDate.getFullYear(), jsDate.getMonth() + 1, 1)
+  }
+
+  if (period.value === 'yearly') {
+    from = new Date(jsDate.getFullYear(), 0, 1)
+    to = new Date(jsDate.getFullYear() + 1, 0, 1)
+  }
+
+  return {
+    from: from.toISOString(),
+    to: to.toISOString(),
+  }
+}
+
 const fetchStats = async () => {
   loading.value = true
   try {
+    const { from, to } = buildRange()
+
     const { data, error } = await supabase.rpc('get_faculty_stats', {
       p_faculty_id: userStore.profile.faculty_id,
-      p_range: period.value,
+      p_date_from: from,
+      p_date_to: to,
     })
 
     if (error) throw error
     stats.value = data
   } catch (err) {
-    toast.error(err.message || 'Error cargando los datos', {
-      position: 'bottom-right',
-      duration: 5000,
-      style: {
-        backgroundColor: 'var(--destructive)',
-        color: '#fff',
-        border: 'none',
-      },
-    })
+    toast.error(err.message || 'Error cargando estadísticas')
   } finally {
     loading.value = false
   }
@@ -122,13 +182,20 @@ const downloadPdf = () => {
       `Estadisticas - ${facultyAcronyms[userStore.profile.faculty_id]}`,
       105,
       y,
-      { align: 'center' }
+      { align: 'center' },
     )
     y += 10
     // Subtítulo de rango de periodo
     let periodoLabel = ''
-    if (period.value === 'daily') periodoLabel = 'Estadística diaria'
-    else if (period.value === 'monthly') periodoLabel = 'Estadística mensual'
+    if (period.value === 'daily') {
+      // Mostrar la fecha seleccionada en lugar de un texto genérico
+      try {
+        const selJsDate = selectedDate.value.toDate(getLocalTimeZone())
+        periodoLabel = format(selJsDate, 'dd/MM/yyyy')
+      } catch (e) {
+        periodoLabel = 'Estadística diaria'
+      }
+    } else if (period.value === 'monthly') periodoLabel = 'Estadística mensual'
     else if (period.value === 'yearly') periodoLabel = 'Estadística anual'
     if (periodoLabel) {
       pdf.setFont('helvetica', 'normal')
@@ -161,7 +228,7 @@ const downloadPdf = () => {
         'Total recargado',
         `Bs ${stats.value.total_amount?.toFixed(2) ?? '-'}`,
         110,
-        y
+        y,
       )
       // Segunda fila
       kpiBox('Activos', `${stats.value.active_students ?? '-'}`, 35, y + 22)
@@ -169,20 +236,20 @@ const downloadPdf = () => {
         'Recargaron',
         `${stats.value.students_with_topups ?? '-'}`,
         110,
-        y + 22
+        y + 22,
       )
       // Top estudiante en una tarjeta
       kpiBox(
         'Top estudiante',
         `${stats.value.top_student?.name ?? '—'}`,
         35,
-        y + 44
+        y + 44,
       )
       pdf.setTextColor(120)
       pdf.text(
         `Bs ${stats.value.top_student?.total?.toFixed(2) ?? '0.00'}`,
         110,
-        y + 57
+        y + 57,
       )
       y += 66
     }
@@ -251,7 +318,7 @@ const downloadPdf = () => {
     pdf.save(
       `estadisticas_ce_${period.value}_${
         new Date().toISOString().split('T')[0]
-      }.pdf`
+      }.pdf`,
     )
   } catch (err) {
     toast.error(err.message || 'Error generando el pdf', {
@@ -280,7 +347,18 @@ onMounted(fetchStats)
       </h1>
 
       <div class="flex gap-2">
-        <Select v-model="period" @update:modelValue="fetchStats">
+        <div class="relative">
+          <Button variant="outline" @click="filterOpen = true">
+            <CalendarIcon class="w-4 h-4" />
+          </Button>
+          <Badge
+            v-if="calendarFilterActive"
+            class="absolute -top-2 -right-2 text-[10px]"
+          >
+            A
+          </Badge>
+        </div>
+        <Select v-model="period" @update:modelValue="onPeriodChange">
           <SelectTrigger>
             <SelectValue placeholder="Periodo" />
           </SelectTrigger>
@@ -394,6 +472,31 @@ onMounted(fetchStats)
     >
       No hay recargas registradas en este período
     </div>
+
+    <Dialog :open="filterOpen" @update:open="filterOpen = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Filtrar por fecha</DialogTitle>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <!-- Aquí está el Calendar de shadcn-vue -->
+          <Calendar
+            v-model="selectedDate"
+            locale="es"
+            weekday-format="short"
+            class="mx-auto rounded-md border shadow-sm w-fit"
+          />
+        </div>
+
+        <div class="flex justify-end gap-2 mt-4">
+          <Button variant="outline" @click="filterOpen = false">
+            Cancelar
+          </Button>
+          <Button @click="applyFilter"> Aplicar filtro </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 

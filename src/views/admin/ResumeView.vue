@@ -64,7 +64,7 @@ const fetchData = async () => {
     p_faculty_id: userStore.profile.faculty_id,
     p_mode: filterMode.value,
     p_date: `${selectedDate.value.year}-${String(
-      selectedDate.value.month
+      selectedDate.value.month,
     ).padStart(2, '0')}-${String(selectedDate.value.day).padStart(2, '0')}`,
   })
 
