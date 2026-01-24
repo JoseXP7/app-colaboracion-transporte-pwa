@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Bar, Pie } from 'vue-chartjs'
+import { Line, Pie } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -9,6 +9,8 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
 } from 'chart.js'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -30,7 +32,7 @@ import { useSupabase } from '@/client/supabase'
 import { useUserStore } from '@/stores/userStore'
 import jsPDF from 'jspdf'
 import { toast } from 'vue-sonner'
-import { Loader2, Calendar as CalendarIcon } from 'lucide-vue-next'
+import { Loader2, Calendar as CalendarIcon, FileDown } from 'lucide-vue-next'
 import { format } from 'date-fns'
 import { today, getLocalTimeZone } from '@internationalized/date'
 
@@ -41,6 +43,8 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
 )
 
 const { supabase } = useSupabase()
@@ -138,13 +142,13 @@ const fetchStats = async () => {
 }
 
 const chartData = computed(() => {
-  if (!stats.value?.distribution) return null
+  if (!stats.value?.pie_distribution) return null
 
   return {
-    labels: stats.value.distribution.map((d) => d.user),
+    labels: stats.value.pie_distribution.map((d) => d.range),
     datasets: [
       {
-        data: stats.value.distribution.map((d) => d.amount),
+        data: stats.value.pie_distribution.map((d) => d.students),
         backgroundColor: [
           '#3b82f6',
           '#22c55e',
@@ -156,6 +160,41 @@ const chartData = computed(() => {
     ],
   }
 })
+
+const lineData = computed(() => {
+  const labels = stats.value?.daily_topups?.map((d) => d.day) ?? []
+  const values = stats.value?.daily_topups?.map((d) => d.total) ?? []
+
+  return {
+    labels,
+    datasets: values.length
+      ? [
+          {
+            label: 'Recargas por día',
+            data: values,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            fill: false,
+            tension: 0.0,
+            pointRadius: 3,
+          },
+        ]
+      : [],
+  }
+})
+
+const lineOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: true },
+    tooltip: { mode: 'index', intersect: false },
+  },
+  scales: {
+    x: { grid: { display: false } },
+    y: { beginAtZero: true, grid: { display: true } },
+  },
+}
 
 const downloadPdf = () => {
   loading.value = true
@@ -259,19 +298,41 @@ const downloadPdf = () => {
     pdf.line(20, y, 190, y)
     y += 10
 
-    // Gráfica (proporcional, cuadrada y centrada)
-    const chartCanvas = document.querySelector('canvas')
-    if (chartCanvas) {
-      const chartImg = chartCanvas.toDataURL('image/png')
+    // Gráfica(s): incluir la de pastel siempre; la línea solo si el periodo
+    // es mensual o anual. Se colocan lado a lado manteniendo diseño.
+    const canvases = Array.from(document.querySelectorAll('canvas'))
+    const pieCanvas = canvases[0]
+    const lineCanvas = canvases[1]
+    if (pieCanvas) {
       pdf.setFontSize(13)
       pdf.setTextColor(33, 37, 41)
       pdf.text('Distribución de recargas', 105, y, { align: 'center' })
       y += 5
-      // Tamaño cuadrado y centrado
-      const chartSize = 70
-      const chartX = (210 - chartSize) / 2
-      pdf.addImage(chartImg, 'PNG', chartX, y, chartSize, chartSize)
-      y += chartSize + 10
+
+      // Márgenes y tamaños en mm para A4 (210mm ancho)
+      const marginX = 20
+      const gap = 10
+      const pieSize = 70
+      const lineWidth = 210 - marginX * 2 - pieSize - gap // ajusta al espacio restante
+      const chartY = y
+
+      const pieImg = pieCanvas.toDataURL('image/png')
+      pdf.addImage(pieImg, 'PNG', marginX, chartY, pieSize, pieSize)
+
+      // Añadir la gráfica de líneas solo para periodos monthly/yearly
+      if (period.value !== 'daily' && lineCanvas) {
+        try {
+          const lineImg = lineCanvas.toDataURL('image/png')
+          const lineX = marginX + pieSize + gap
+          // ajustar altura para mantener aspecto similar al pie
+          const lineHeight = pieSize
+          pdf.addImage(lineImg, 'PNG', lineX, chartY, lineWidth, lineHeight)
+        } catch (e) {
+          // Si falla al generar la imagen de la línea, ignorar y continuar
+        }
+      }
+
+      y += pieSize + 10
     }
 
     // LISTA DE ESTUDIANTES
@@ -368,9 +429,10 @@ onMounted(fetchStats)
             <SelectItem value="yearly">Anual</SelectItem>
           </SelectContent>
         </Select>
-
+        <!--Boton responsive, en movil solo un icono, en general "Generar Reporte"-->
         <Button :disabled="!stats || loading" @click="downloadPdf">
-          Descargar PDF
+          <span class="hidden md:inline">Generar Reporte</span>
+          <span class="inline md:hidden"><FileDown class="w-4 h-4" /></span>
         </Button>
       </div>
     </div>
@@ -461,6 +523,22 @@ onMounted(fetchStats)
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow md:col-span-3">
+        <h3 class="text-sm font-medium mb-3">Días de Recargas</h3>
+
+        <!-- Contenedor para gráfico más grande -->
+        <div class="w-full max-w-4xl mx-auto">
+          <div class="h-72 md:h-96">
+            <Line
+              :data="lineData"
+              :options="lineOptions"
+              :height="380"
+              :width="900"
+            />
+          </div>
         </div>
       </div>
     </div>
