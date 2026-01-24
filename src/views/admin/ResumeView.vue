@@ -151,33 +151,38 @@ onMounted(fetchData)
     <div class="bg-white rounded-2xl shadow p-4">
       <h2 class="text-sm font-semibold mb-3">Últimas transacciones</h2>
 
-      <div
-        v-if="recentTransactions.length === 0"
-        class="text-sm text-slate-500"
-      >
-        No hay movimientos recientes
-      </div>
+      <!-- Contenedor con altura máxima y scroll interno -->
+      <div class="mt-2">
+        <div class="max-h-80 md:max-h-[50vh] overflow-y-auto pr-2">
+          <div
+            v-if="recentTransactions.length === 0"
+            class="text-sm text-slate-500 p-2"
+          >
+            No hay movimientos recientes
+          </div>
 
-      <div
-        v-for="tx in recentTransactions"
-        :key="tx.id"
-        class="flex justify-between items-center py-2 border-b last:border-b-0"
-      >
-        <div class="flex items-center gap-2">
-          <ArrowUpRight class="text-primary" />
-          <div>
-            <p class="text-sm font-medium">
-              {{ tx.type }}
-            </p>
-            <p class="text-xs text-slate-500">
-              {{ format(new Date(tx.created_at), 'dd/MM/yyyy HH:mm') }}
-            </p>
+          <div
+            v-for="tx in recentTransactions"
+            :key="tx.id"
+            class="flex justify-between items-center py-2 border-b last:border-b-0"
+          >
+            <div class="flex items-center gap-2">
+              <ArrowUpRight class="text-primary" />
+              <div>
+                <p class="text-sm font-medium">
+                  {{ tx.type }}
+                </p>
+                <p class="text-xs text-slate-500">
+                  {{ format(new Date(tx.created_at), 'dd/MM/yyyy HH:mm') }}
+                </p>
+              </div>
+            </div>
+
+            <span class="font-semibold text-green-600">
+              Bs {{ Number(tx.amount_bs).toFixed(2) }}
+            </span>
           </div>
         </div>
-
-        <span class="font-semibold text-green-600">
-          Bs {{ Number(tx.amount_bs).toFixed(2) }}
-        </span>
       </div>
     </div>
 
